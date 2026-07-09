@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NapkinMath — Napkin math for life's biggest numbers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Mono:wght@400;500;600&family=Libre+Franklin:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F6F7F4;
+    --card:#FFFFFF;
+    --ink:#14231C;
+    --ink-soft:#4B5B53;
+    --line:#DDE3DD;
+    --green:#0E6B4A;
+    --green-soft:#E4F0EA;
+    --gold:#B8860B;
+    --gold-soft:#F7EFDB;
+    --red:#A33A2E;
+    --red-soft:#F6E6E3;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{font-size:16px}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Libre Franklin',system-ui,sans-serif;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+  .wrap{max-width:880px;margin:0 auto;padding:32px 20px 64px}
+
+  header{margin-bottom:20px}
+  .brand{
+    font-family:'Bricolage Grotesque',sans-serif;
+    font-weight:800;font-size:1.9rem;letter-spacing:-.02em;
+  }
+  .brand .tick{color:var(--green)}
+  .tagline{color:var(--ink-soft);font-size:.95rem;margin-top:2px}
+
+  .tabs{
+    display:flex;gap:4px;margin:22px 0 20px;border-bottom:2px solid var(--line);
+    overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;
+  }
+  .tabs::-webkit-scrollbar{display:none}
+  .tab{
+    appearance:none;border:none;background:none;cursor:pointer;
+    font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:.95rem;
+    color:var(--ink-soft);padding:10px 12px 12px;position:relative;white-space:nowrap;flex-shrink:0;
+  }
+  .tab[aria-selected="true"]{color:var(--ink)}
+  .tab[aria-selected="true"]::after{
+    content:"";position:absolute;left:0;right:0;bottom:-2px;height:3px;background:var(--green);border-radius:2px 2px 0 0;
+  }
+  .tab:focus-visible{outline:2px solid var(--green);outline-offset:2px;border-radius:6px}
+
+  .panel{display:none}
+  .panel.active{display:block}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  @media(max-width:720px){.grid{grid-template-columns:1fr}}
+
+  .card{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:22px;
+  }
+  .card h2{
+    font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:1.05rem;
+    margin-bottom:14px;
+  }
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+  @media(max-width:420px){.two-col{grid-template-columns:1fr}}
+  .field{margin-bottom:14px}
+  .field label{
+    display:block;font-size:.8rem;font-weight:600;color:var(--ink-soft);
+    text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;
+  }
+  .field .hint{font-size:.78rem;color:var(--ink-soft);font-weight:400;text-transform:none;letter-spacing:0}
+  .input-row{position:relative}
+  .input-row .prefix,.input-row .suffix{
+    position:absolute;top:50%;transform:translateY(-50%);
+    font-family:'IBM Plex Mono',monospace;font-size:.9rem;color:var(--ink-soft);pointer-events:none;
+  }
+  .input-row .prefix{left:12px}
+  .input-row .suffix{right:12px}
+  input[type=number]{
+    width:100%;padding:11px 12px;border:1.5px solid var(--line);border-radius:10px;
+    font-family:'IBM Plex Mono',monospace;font-size:1rem;color:var(--ink);background:#FCFDFB;
+  }
+  input.has-prefix{padding-left:28px}
+  input.has-suffix{padding-right:44px}
+  input[type=number]:focus{outline:none;border-color:var(--green);background:#fff}
+  input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  input[type=number]{-moz-appearance:textfield;appearance:textfield}
+
+  .verdict{
+    border-radius:var(--radius);padding:22px;border:1.5px dashed var(--line);
+    text-align:center;transition:background .25s,border-color .25s;
+  }
+  .verdict .label{
+    font-size:.75rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft);
+  }
+  .verdict .big{
+    font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:2.4rem;line-height:1.1;margin:6px 0 2px;
+  }
+  .verdict .unit{font-size:.95rem;color:var(--ink-soft);font-family:'IBM Plex Mono',monospace}
+  .stamp{
+    display:inline-block;margin-top:12px;padding:8px 18px;border-radius:8px;
+    font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:1rem;letter-spacing:.06em;
+    border:2px solid transparent;
+  }
+  .verdict.good{background:var(--green-soft);border-color:var(--green)}
+  .verdict.good .stamp{color:var(--green);border-color:var(--green)}
+  .verdict.mid{background:var(--gold-soft);border-color:var(--gold)}
+  .verdict.mid .stamp{color:var(--gold);border-color:var(--gold)}
+  .verdict.bad{background:var(--red-soft);border-color:var(--red)}
+  .verdict.bad .stamp{color:var(--red);border-color:var(--red)}
+
+  .breakdown{margin-top:16px;font-size:.9rem}
+  .breakdown .row{
+    display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid var(--line);
+  }
+  .breakdown .row:last-child{border-bottom:none}
+  .breakdown .num{font-family:'IBM Plex Mono',monospace;font-weight:500;white-space:nowrap}
+
+  /* stacked cost bar */
+  .stackbar{display:flex;height:14px;border-radius:7px;overflow:hidden;margin-top:16px;border:1px solid var(--line)}
+  .stackbar .seg{transition:width .3s}
+  .stack-legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;font-size:.78rem;color:var(--ink-soft)}
+  .stack-legend .dot{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:middle}
+
+  .timeline{margin:20px 4px 8px}
+  .track{position:relative;height:8px;background:var(--line);border-radius:4px}
+  .track .fill{position:absolute;left:0;top:0;bottom:0;background:var(--green);border-radius:4px;transition:width .3s}
+  .marker{position:absolute;top:-6px;width:20px;height:20px;border-radius:50%;transform:translateX(-50%);border:3px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+  .marker.now{background:var(--ink)}
+  .marker.coast{background:var(--gold)}
+  .marker.retire{background:var(--green)}
+  .tl-labels{display:flex;justify-content:space-between;margin-top:10px;font-size:.78rem;color:var(--ink-soft)}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:14px;font-size:.8rem;color:var(--ink-soft)}
+  .legend .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:middle}
+
+  .promo{
+    margin-top:20px;border-radius:var(--radius);border:1px solid var(--line);
+    background:linear-gradient(135deg,#fff, #F3F7F3);padding:16px 18px;
+    display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;
+  }
+  .promo .txt{font-size:.9rem;max-width:520px}
+  .promo .txt strong{font-weight:600}
+  .promo a.btn{
+    display:inline-block;background:var(--green);color:#fff;text-decoration:none;
+    padding:10px 18px;border-radius:10px;font-weight:600;font-size:.9rem;white-space:nowrap;
+  }
+  .promo a.btn:hover{background:#0B5A3E}
+  .promo a.btn:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+
+  footer{margin-top:36px;font-size:.78rem;color:var(--ink-soft);text-align:center}
+
+  @media (prefers-reduced-motion: reduce){
+    *{transition:none !important}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">Napkin<span class="tick">Math</span></div>
+    <p class="tagline">Napkin math for life's biggest numbers — points, retirement, mortgages, car loans, savings, and debt.</p>
+  </header>
+
+  <div class="tabs" role="tablist" aria-label="Calculators">
+    <button class="tab" id="tab-cpp" role="tab" aria-selected="true" aria-controls="panel-cpp">Points vs. Cash</button>
+    <button class="tab" id="tab-fire" role="tab" aria-selected="false" aria-controls="panel-fire">Coast FIRE</button>
+    <button class="tab" id="tab-mort" role="tab" aria-selected="false" aria-controls="panel-mort">Mortgage</button>
+    <button class="tab" id="tab-car" role="tab" aria-selected="false" aria-controls="panel-car">Car Loan</button>
+    <button class="tab" id="tab-save" role="tab" aria-selected="false" aria-controls="panel-save">Savings Growth</button>
+    <button class="tab" id="tab-debt" role="tab" aria-selected="false" aria-controls="panel-debt">Debt Payoff</button>
+  </div>
+
+  <!-- ================= CPP ================= -->
+  <section class="panel active" id="panel-cpp" role="tabpanel" aria-labelledby="tab-cpp">
+    <div class="grid">
+      <div class="card">
+        <h2>Your redemption</h2>
+        <div class="field">
+          <label for="cashPrice">Cash price of the flight</label>
+          <div class="input-row"><span class="prefix">$</span>
+            <input class="has-prefix" type="number" id="cashPrice" value="620" min="0" step="10" inputmode="decimal"></div>
+        </div>
+        <div class="field">
+          <label for="pointCost">Point cost</label>
+          <div class="input-row">
+            <input class="has-suffix" type="number" id="pointCost" value="45000" min="1" step="1000" inputmode="numeric">
+            <span class="suffix">pts</span></div>
+        </div>
+        <div class="field">
+          <label for="taxes">Cash taxes &amp; fees on the award <span class="hint">(what you still pay out of pocket)</span></label>
+          <div class="input-row"><span class="prefix">$</span>
+            <input class="has-prefix" type="number" id="taxes" value="11.20" min="0" step="1" inputmode="decimal"></div>
+        </div>
+        <div class="field">
+          <label for="baseline">Your baseline point value <span class="hint">(what you could get elsewhere — cashback portal, transfer average)</span></label>
+          <div class="input-row">
+            <input class="has-suffix" type="number" id="baseline" value="1.25" min="0" step="0.05" inputmode="decimal">
+            <span class="suffix">¢/pt</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Verdict</h2>
+        <div class="verdict good" id="cppVerdict" aria-live="polite">
+          <div class="label">This redemption is worth</div>
+          <div class="big" id="cppValue">1.35</div>
+          <div class="unit">cents per point</div>
+          <div class="stamp" id="cppStamp">USE POINTS</div>
+        </div>
+        <div class="breakdown">
+          <div class="row"><span>Net cash value covered by points</span><span class="num" id="netValue">$608.80</span></div>
+          <div class="row"><span>Same points at your baseline</span><span class="num" id="baselineValue">$562.50</span></div>
+          <div class="row"><span>Extra value from this redemption</span><span class="num" id="delta">+$46.30</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="promo">
+      <div class="txt"><strong>Earning points faster:</strong> the right travel card can add 60,000+ bonus points in the first three months. Compare current sign-up offers.</div>
+      <a class="btn" href="#your-affiliate-link" rel="sponsored noopener">See top travel cards</a>
+    </div>
+  </section>
+
+  <!-- ================= COAST FIRE ================= -->
+  <section class="panel" id="panel-fire" role="tabpanel" aria-labelledby="tab-fire">
+    <div class="grid">
+      <div class="card">
+        <h2>Your numbers</h2>
+        <div class="two-col">
+          <div class="field">
+            <label for="ageNow">Current age</label>
+            <input type="number" id="ageNow" value="32" min="15" max="80" step="1" inputmode="numeric">
+          </div>
+          <div class="field">
+            <label for="ageRetire">Retirement age</label>
+            <input type="number" id="ageRetire" value="60" min="30" max="80" step="1" inputmode="numeric">
+          </div>
+        </div>
+        <div class="field">
+          <label for="assets">Current invested assets</label>
+          <div class="input-row"><span class="prefix">$</span>
+            <input class="has-prefix" type="number" id="assets" value="150000" min="0" step="5000" inputmode="numeric"></div>
+        </div>
+        <div class="field">
+          <label for="contrib">Monthly contribution <span class="hint">(until you coast)</span></label>
+          <div class="input-row"><span class="prefix">$</span>
+            <input class="has-prefix" type="number" id="contrib" value="1500" min="0" step="100" inputmode="numeric"></div>
+        </div>
+        <div class="field">
+          <label for="ret">Expected annual return <span class="hint">(after inflation, 5–7% is typical)</span></label>
+          <div class="input-row">
+            <input class="has-suffix" type="number" id="ret" value="6" min="0" max="15" step="0.5" inputmode="decimal">
+            <span class="suffix">%</span></div>
+        </div>
+        <div class="field">
+          <label for="spend">Annual spending in retirement <span class="hint">(today's dollars)</span></label>
+          <div class="input-row"><span class="prefix">$</span>
+            <input class="has-prefix" type="number" id="spend" value="60000" min="0" step="5000" inputmode="numeric"></div>
+        </div>
+        <div class="field">
+          <label for="swr">Safe withdrawal rate</label>
+          <div class="input-row">
+            <input class="has-suffix" type="number" id="swr" value="4" min="2" max="6" step="0.25" inputmode="decimal">
+            <span class="suffix">%</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Verdict</h2>
+        <div class="verdict mid" id="fireVerdict" aria-live="polite">
+          <div class="label" id="fireLabel">You can stop contributing at age</div>
+          <div class="big" id="coastAge">41</div>
+          <div class="unit" id="fireUnit">and still retire on schedule</div>
+          <div class="stamp" id="fireStamp">COAST AT 41</div>
+        </div>
+
+        <div class="timeline" aria-hidden="true">
+          <div class="track">
+            <div class="fill" id="tlFill" style="width:35%"></div>
+            <div class="marker now" id="mNow" style="left:0%"></div>
+            <div class="marker coast" id="mCoast" style="left:35%"></div>
+            <div class="marker retire" id="mRetire" style="left:100%"></div>
+          </div>
+          <div class="tl-labels"><span id="tlLeft">Age 32</span><span id="tlRight">Age 60</span></div>
+          <div class="legend">
+            <span><span class="dot" style="background:var(--ink)"></span>Today</span>
+            <span><span class="dot" style="background:var(--gold)"></span>Coast point</span>
+            <span><span class="dot" style="background:var(--green)"></span>Retirement</span>
+          </div>
+        </div>
+
+        <div class="breakdown">
+          <div class="row"><span>FIRE number (spending ÷ SWR)</span><span class="num" id="fireNumber">$1,500,000</span></div>
+          <div class="row"><span>Coast number needed today</span><span class="num" id="coastNumber">$293,000</span></div>
+          <div class="row"><span>Portfolio at your coast point</span><span class="num" id="coastAssets">$—</span></div>
+          <div class="row"><span>Years of contributions left</span><span class="num" id="yearsLeft">9</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="promo">
+      <div class="txt"><strong>Reach your coast point sooner:</strong> low-fee index investing is the engine behind Coast FIRE. Compare brokerages with zero-commission index funds.</div>
+      <a class="btn" href="#your-affiliate-link" rel="sponsored noopener">Compare brokerages</a>
+    </div>
+  </section>
+
+  <!-- ================= MORTGAGE ================= -->
+  <section class="panel" id="panel-mort" role="tabpanel" aria-labelledby="tab-mort">
+    <div class="grid">
+      <div class="card">
+        <h2>Your home</h2>
+        <div class="field">
+          <label for="mPrice">Home price</label>
+          <div class="input-row"><span class="prefix">$</span>
+            <input class="has-prefix" type="number" id="mPrice" value="550000" min="0" step="10000" inputmode="numeric"></div>
+        </div>
+        <div class="two-col">
+          <div class="field">
+            <label for="mDown">Down payment</label>
+            <div class="input-row"><span class="prefix">$</span>
+              <input class="has-prefix" type="number" id="mDown" value="110000" min="0" step="5000" inputmode="numeric"></div>
+          </div>
+          <div class="field">
+            <label for="mTerm">Term</label>
+            <div class="input-row">
+              <input class="has-suffix" type="number" id="mTerm" value="30" min="5" max="40" step="5" inputmode="numeric">
+              <span class="suffix">yrs</span></div>
+          </div>
+        </div>
+        <div class="field">
+          <label for="mRate">Interest rate (APR)</label>
+          <div class="input-row">
+            <input class="has-suffix" type="number" id="mRate" value="6.5" min="0" max="15" step="0.125" inputmode="decimal">
+            <span class="suffix">%</span></div>
+        </div>
+        <div class="two-col">
+          <div class="field">
+            <label for="mTax">Property tax <span class="hint">(per year)</span></label>
+            <div class="input-row">
+              <input class="has-suffix" type="number" id="mTax" value="1.1" min="0" max="4" step="0.05" inputmode="decimal">
+              <span class="suffix">%</span></div>
+          </div>
+          <div class="field">
+            <label for="mIns">Home insurance <span class="hint">(per year)</span></label>
+            <div class="input-row"><span class="prefix">$</span>
+              <input class="has-prefix" type="number" id="mIns" value="1800" min="0" step="100" inputmode="numeric"></div>
+          </div>
+        </div>
+        <div class="field">
+          <label for="mHoa">HOA dues <span class="hint">(per month, 0 if none)</span></label>
+          <div class="input-row"><span class="prefix">$</span>
+            <input class="has-prefix" type="number" id="mHoa" value="0" min="0" step="25" inputmode="numeric"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Verdict</h2>
+        <div class="verdict good" id="mortVerdict" aria-live="polite">
+          <div class="label">Total monthly payment</div>
+          <div class="big" id="mortMonthly">$3,285</div>
+          <div class="unit" id="mortSub">incl. taxes &amp; insurance</div>
+          <div class="stamp" id="mortStamp">PITI / MO</div>
+        </div>
+
+        <div class="stackbar" aria-hidden="true">
+          <div class="seg" id="segPI" style="width:78%;background:var(--green)"></div>
+          <div class="seg" id="segTax" style="width:15%;background:var(--gold)"></div>
+          <div class="seg" id="segIns" style="width:5%;background:#6B8F7E"></div>
+          <div class="seg" id="segHoa" style="width:2%;background:#C9CFC9"></div>
+        </div>
+        <div class="stack-legend">
+          <span><span class="dot" style="background:var(--green)"></span>Principal &amp; interest</span>
+          <span><span class="dot" style="background:var(--gold)"></span>Property tax</span>
+          <span><span class="dot" style="background:#6B8F7E"></span>Insurance</span>
+          <span><span class="dot" style="background:#C9CFC9"></span>HOA</span>
+        </div>
+
+        <div class="breakdown">
+          <div class="row"><span>Loan amount</span><span class="num" id="mLoan">$440,000</span></div>
+          <div class="row"><span>Principal &amp; interest / mo</span><span class="num" id="mPI">$2,781</span></div>
+          <div class="row"><span>Total interest over life of loan</span><span class="num" id="mTotInt">$561,000</span></div>
+          <div class="row"><span>Total cost (loan + interest)</span><span class="num" id="mTotCost">$1,001,000</span></div>
+          <div class="row"><span>PMI warning</span><span class="num" id="mPmi">—</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="promo">
+      <div class="txt"><strong>Rate shopping saves real money:</strong> a 0.5% lower rate on this loan is worth tens of thousands. Compare today's mortgage rates from multiple lenders.</div>
+      <a class="btn" href="#your-affiliate-link" rel="sponsored noopener">Compare mortgage rates</a>
+    </div>
+  </section>
+
+  <!-- ================= CAR LOAN ================= -->
+  <section class="panel" id="panel-car" role="tabpanel" aria-labelledby="tab-car">
+    <div class="grid">
+      <div class="card">
+        <h2>Your vehicle</h2>
+        <div class="field">
+          <label for="cPrice">Vehicle price</label>
+          <div class="input-row"><span class="prefix">$</span>
+            <input class="has-prefix" type="number" id="cPrice" value="38000" min="0" step="500" inputmode="numeric"></div>
+        </div>
+        <div class="two-col">
+          <div class="field">
+            <label for="cDown">Down payment</label>
+            <div class="input-row"><span class="prefix">$</span>
+              <input class="has-prefix" type="number" id="cDown" value="5000" min="0" step="500" inputmode="numeric"></div>
+          </div>
+          <div class="field">
+            <label for="cTrade">Trade-in value</label>
+            <div class="input-row"><span class="prefix">$</span>
+              <input class="has-prefix" type="number" id="cTrade" value="0" min="0" step="500" inputmode="numeric"></div>
+          </div>
+        </div>
+        <div class="two-col">
+          <div class="field">
+            <label for="cRate">Interest rate (APR)</label>
+            <div class="input-row">
+              <input class="has-suffix" type="number" id="cRate" value="7.5" min="0" max="30" step="0.25" inputmode="decimal">
+              <span class="suffix">%</span></div>
+          </div>
+          <div class="field">
+            <label for="cTerm">Term</label>
+            <div class="input-row">
+              <input class="has-suffix" type="number" id="cTerm" value="60" min="12" max="96" step="12" inputmode="numeric">
+              <span class="suffix">mos</span></div>
+          </div>
+        </div>
+        <div class="field">
+          <label for="cTax">Sales tax <span class="hint">(applied to price, rolled into loan)</span></label>
+          <div class="input-row">
+            <input class="has-suffix" type="number" id="cTax" value="7.75" min="0" max="12" step="0.25" inputmode="decimal">
+            <span class="suffix">%</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Verdict</h2>
+        <div class="verdict mid" id="carVerdict" aria-live="polite">
+          <div class="label">Monthly payment</div>
+          <div class="big" id="carMonthly">$724</div>
+          <div class="unit" id="carSub">for 60 months</div>
+          <div class="stamp" id="carStamp">60 PAYMENTS</div>
+        </div>
+        <div class="breakdown">
+          <div class="row"><span>Amount financed</span><span class="num" id="cLoan">$35,945</span></div>
+          <div class="row"><span>Total interest paid</span><span class="num" id="cInt">$7,290</span></div>
+          <div class="row"><span>Total of all payments</span><span class="num" id="cTotal">$43,235</span></div>
+          <div class="row"><span>True cost of the car</span><span class="num" id="cTrueCost">$48,235</span></div>
+          <div class="row"><span>Interest as % of car price</span><span class="num" id="cIntPct">19%</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="promo">
+      <div class="txt"><strong>Dealer financing is rarely the best deal:</strong> pre-approval from a credit union or online lender often beats the dealer's rate by 1–3%.</div>
+      <a class="btn" href="#your-affiliate-link" rel="sponsored noopener">Check auto loan rates</a>
+    </div>
+  </section>
+
+  <!-- ================= SAVINGS GROWTH ================= -->
+  <section class="panel" id="panel-save" role="tabpanel" aria-labelledby="tab-save">
+    <div class="grid">
+      <div class="card">
+        <h2>Your plan</h2>
+        <div class="field">
+          <label for="sInit">Starting balance</label>
+          <div class="input-row"><span class="prefix">$</span>
+            <input class="has-prefix" type="number" id="sInit" value="10000" min="0" step="1000" inputmode="numeric"></div>
+        </div>
+        <div class="field">
+          <label for="sMonthly">Monthly contribution</label>
+          <div class="input-row"><span class="prefix">$</span>
+            <input class="has-prefix" type="number" id="sMonthly" value="500" min="0" step="50" inputmode="numeric"></div>
+        </div>
+        <div class="two-col">
+          <div class="field">
+            <label for="sRate">Annual return / APY</label>
+            <div class="input-row">
+              <input class="has-suffix" type="number" id="sRate" value="5" min="0" max="15" step="0.25" inputmode="decimal">
+              <span class="suffix">%</span></div>
+          </div>
+          <div class="field">
+            <label for="sYears">Time horizon</label>
+            <div class="input-row">
+              <input class="has-suffix" type="number" id="sYears" value="15" min="1" max="50" step="1" inputmode="numeric">
+              <span class="suffix">yrs</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Verdict</h2>
+        <div class="verdict good" id="saveVerdict" aria-live="polite">
+          <div class="label" id="saveLabel">Balance in 15 years</div>
+          <div class="big" id="saveTotal">$155,000</div>
+          <div class="unit" id="saveSub">from $100,000 contributed</div>
+          <div class="stamp" id="saveStamp">GROWTH +55%</div>
+        </div>
+
+        <div class="stackbar" aria-hidden="true">
+          <div class="seg" id="segPrin" style="width:65%;background:#6B8F7E"></div>
+          <div class="seg" id="segGrow" style="width:35%;background:var(--green)"></div>
+        </div>
+        <div class="stack-legend">
+          <span><span class="dot" style="background:#6B8F7E"></span>Money you put in</span>
+          <span><span class="dot" style="background:var(--green)"></span>Growth / interest earned</span>
+        </div>
+
+        <div class="breakdown">
+          <div class="row"><span>Total contributed</span><span class="num" id="sContrib">$100,000</span></div>
+          <div class="row"><span>Interest / growth earned</span><span class="num" id="sGrowth">$55,000</span></div>
+          <div class="row"><span>Balance at halfway point</span><span class="num" id="sHalf">$62,000</span></div>
+          <div class="row"><span>Est. monthly income at 4% rule</span><span class="num" id="sIncome">$516/mo</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="promo">
+      <div class="txt"><strong>Your bank is probably paying you 0.01%:</strong> high-yield savings accounts currently pay 40–400× more than big-bank checking. Same FDIC insurance.</div>
+      <a class="btn" href="#your-affiliate-link" rel="sponsored noopener">See top HYSA rates</a>
+    </div>
+  </section>
+
+  <!-- ================= DEBT PAYOFF ================= -->
+  <section class="panel" id="panel-debt" role="tabpanel" aria-labelledby="tab-debt">
+    <div class="grid">
+      <div class="card">
+        <h2>Your debt</h2>
+        <div class="field">
+          <label for="dBal">Current balance</label>
+          <div class="input-row"><span class="prefix">$</span>
+            <input class="has-prefix" type="number" id="dBal" value="12000" min="0" step="500" inputmode="numeric"></div>
+        </div>
+        <div class="field">
+          <label for="dApr">Interest rate (APR)</label>
+          <div class="input-row">
+            <input class="has-suffix" type="number" id="dApr" value="24" min="0" max="40" step="0.5" inputmode="decimal">
+            <span class="suffix">%</span></div>
+        </div>
+        <div class="field">
+          <label for="dPay">Monthly payment</label>
+          <div class="input-row"><span class="prefix">$</span>
+            <input class="has-prefix" type="number" id="dPay" value="400" min="0" step="25" inputmode="numeric"></div>
+        </div>
+        <div class="field">
+          <label for="dExtra">Extra payment per month <span class="hint">(see how much time and interest it saves)</span></label>
+          <div class="input-row"><span class="prefix">$</span>
+            <input class="has-prefix" type="number" id="dExtra" value="100" min="0" step="25" inputmode="numeric"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Verdict</h2>
+        <div class="verdict mid" id="debtVerdict" aria-live="polite">
+          <div class="label" id="debtLabel">Debt-free in</div>
+          <div class="big" id="debtMonths">32 mo</div>
+          <div class="unit" id="debtSub">with the extra payment</div>
+          <div class="stamp" id="debtStamp">FREE IN 2027</div>
+        </div>
+        <div class="breakdown">
+          <div class="row"><span>Payoff at current payment</span><span class="num" id="dBase">44 mo</span></div>
+          <div class="row"><span>Payoff with extra payment</span><span class="num" id="dFast">32 mo</span></div>
+          <div class="row"><span>Interest at current payment</span><span class="num" id="dIntBase">$5,500</span></div>
+          <div class="row"><span>Interest with extra payment</span><span class="num" id="dIntFast">$3,800</span></div>
+          <div class="row"><span>Interest saved</span><span class="num" id="dSaved">$1,700</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="promo">
+      <div class="txt"><strong>Paying 20%+ APR?</strong> A 0% balance-transfer card or lower-rate consolidation loan can redirect every interest dollar toward the actual balance.</div>
+      <a class="btn" href="#your-affiliate-link" rel="sponsored noopener">See 0% transfer offers</a>
+    </div>
+  </section>
+
+  <footer>For educational purposes only — not financial advice. Results assume steady rates and returns; real life is bumpier.</footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  const $ = id => document.getElementById(id);
+  const fmtUSD = n => n.toLocaleString('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0});
+  const fmtUSD2 = n => n.toLocaleString('en-US',{style:'currency',currency:'USD',minimumFractionDigits:2,maximumFractionDigits:2});
+  const num = id => { const v = parseFloat($(id).value); return isFinite(v) ? v : 0; };
+
+  /* ---- Tabs ---- */
+  const tabIds = ['tab-cpp','tab-fire','tab-mort','tab-car','tab-save','tab-debt'];
+  const tabs = tabIds.map($);
+  tabs.forEach(t => t.addEventListener('click', () => {
+    tabs.forEach(x => {
+      const sel = x===t;
+      x.setAttribute('aria-selected', sel ? 'true':'false');
+      $(x.getAttribute('aria-controls')).classList.toggle('active', sel);
+    });
+  }));
+
+  /* Monthly payment on an amortized loan */
+  function pmt(principal, annualRate, months){
+    if (months <= 0) return 0;
+    const r = annualRate/100/12;
+    if (r === 0) return principal / months;
+    return principal * r / (1 - Math.pow(1+r, -months));
+  }
+
+  /* ---- CPP ---- */
+  function calcCPP(){
+    const cash = num('cashPrice'), pts = Math.max(num('pointCost'),1), tax = num('taxes'), base = num('baseline');
+    const net = Math.max(cash - tax, 0);
+    const cpp = net / pts * 100;
+    const baseVal = pts * base / 100;
+    const delta = net - baseVal;
+
+    $('cppValue').textContent = cpp.toFixed(2);
+    $('netValue').textContent = fmtUSD2(net);
+    $('baselineValue').textContent = fmtUSD2(baseVal);
+    $('delta').textContent = (delta>=0?'+':'−') + fmtUSD2(Math.abs(delta));
+
+    const v = $('cppVerdict'), s = $('cppStamp');
+    v.classList.remove('good','mid','bad');
+    if (cpp >= base * 1.1) { v.classList.add('good'); s.textContent = 'USE POINTS'; }
+    else if (cpp >= base * 0.9) { v.classList.add('mid'); s.textContent = 'TOSS-UP'; }
+    else { v.classList.add('bad'); s.textContent = 'PAY CASH'; }
+  }
+
+  /* ---- Coast FIRE ---- */
+  function calcFIRE(){
+    const ageNow = num('ageNow'), ageRet = num('ageRetire');
+    const assets = num('assets'), contrib = num('contrib');
+    const r = num('ret')/100, swr = Math.max(num('swr'),0.5)/100, spend = num('spend');
+
+    const fireNumber = spend / swr;
+    const yearsTotal = Math.max(ageRet - ageNow, 0);
+    const coastNumberToday = fireNumber / Math.pow(1+r, yearsTotal);
+
+    $('fireNumber').textContent = fmtUSD(fireNumber);
+    $('coastNumber').textContent = fmtUSD(coastNumberToday);
+
+    const v = $('fireVerdict'), s = $('fireStamp');
+    v.classList.remove('good','mid','bad');
+
+    if (ageRet <= ageNow) {
+      $('fireLabel').textContent = 'Check your ages';
+      $('coastAge').textContent = '—';
+      $('fireUnit').textContent = 'retirement age must be after current age';
+      s.textContent = 'FIX INPUTS'; v.classList.add('bad');
+      $('coastAssets').textContent = '$—'; $('yearsLeft').textContent = '—';
+      setTimeline(ageNow, ageNow, Math.max(ageRet, ageNow+1), false);
+      return;
+    }
+
+    if (assets >= coastNumberToday) {
+      $('fireLabel').textContent = 'You are already at Coast FIRE';
+      $('coastAge').textContent = String(ageNow);
+      $('fireUnit').textContent = 'stop contributing today and compounding carries you to ' + fmtUSD(fireNumber);
+      s.textContent = 'COASTING NOW'; v.classList.add('good');
+      $('coastAssets').textContent = fmtUSD(assets);
+      $('yearsLeft').textContent = '0';
+      setTimeline(ageNow, ageNow, ageRet, true);
+      return;
+    }
+
+    const rm = Math.pow(1+r, 1/12) - 1;
+    let bal = assets, months = 0;
+    const maxMonths = Math.round(yearsTotal * 12);
+    let coastMonth = -1;
+    while (months < maxMonths) {
+      bal = bal * (1+rm) + contrib;
+      months++;
+      const yearsLeftAfter = (maxMonths - months) / 12;
+      if (bal >= fireNumber / Math.pow(1+r, yearsLeftAfter)) { coastMonth = months; break; }
+    }
+
+    if (coastMonth === -1) {
+      $('fireLabel').textContent = 'Not on track yet';
+      $('coastAge').textContent = String(ageRet);
+      $('fireUnit').textContent = 'projected ' + fmtUSD(bal) + ' vs. ' + fmtUSD(fireNumber) + ' needed — raise contributions or push the date';
+      s.textContent = 'KEEP CONTRIBUTING'; v.classList.add('bad');
+      $('coastAssets').textContent = fmtUSD(bal);
+      $('yearsLeft').textContent = String(yearsTotal) + '+';
+      setTimeline(ageNow, ageRet, ageRet, true);
+      return;
+    }
+
+    const coastAge = ageNow + coastMonth/12;
+    const coastAgeDisplay = Math.round(coastAge);
+    $('fireLabel').textContent = 'You can stop contributing at age';
+    $('coastAge').textContent = String(coastAgeDisplay);
+    $('fireUnit').textContent = 'and still retire at ' + ageRet + ' on ' + fmtUSD(spend) + '/yr';
+    $('fireStamp').textContent = 'COAST AT ' + coastAgeDisplay;
+    v.classList.add(coastMonth/12 <= yearsTotal*0.4 ? 'good' : 'mid');
+    $('coastAssets').textContent = fmtUSD(bal);
+    $('yearsLeft').textContent = (coastMonth/12).toFixed(1);
+    setTimeline(ageNow, coastAge, ageRet, true);
+  }
+
+  function setTimeline(now, coast, retire, showCoast){
+    const span = Math.max(retire - now, 0.001);
+    const pct = Math.min(Math.max((coast - now)/span*100, 0), 100);
+    $('tlFill').style.width = pct + '%';
+    $('mNow').style.left = '0%';
+    $('mCoast').style.left = pct + '%';
+    $('mCoast').style.display = showCoast ? 'block' : 'none';
+    $('mRetire').style.left = '100%';
+    $('tlLeft').textContent = 'Age ' + Math.round(now);
+    $('tlRight').textContent = 'Age ' + Math.round(retire);
+  }
+
+  /* ---- Mortgage ---- */
+  function calcMort(){
+    const price = num('mPrice'), down = Math.min(num('mDown'), price);
+    const termY = Math.max(num('mTerm'), 1), rate = num('mRate');
+    const taxPct = num('mTax'), insYr = num('mIns'), hoa = num('mHoa');
+
+    const loan = Math.max(price - down, 0);
+    const months = termY * 12;
+    const pi = pmt(loan, rate, months);
+    const taxMo = price * taxPct/100 / 12;
+    const insMo = insYr / 12;
+    const total = pi + taxMo + insMo + hoa;
+    const totInt = Math.max(pi * months - loan, 0);
+
+    $('mortMonthly').textContent = fmtUSD(total);
+    $('mortSub').textContent = 'incl. taxes & insurance' + (hoa>0 ? ' & HOA' : '');
+    $('mortStamp').textContent = 'PITI / MO';
+    $('mLoan').textContent = fmtUSD(loan);
+    $('mPI').textContent = fmtUSD(pi);
+    $('mTotInt').textContent = fmtUSD(totInt);
+    $('mTotCost').textContent = fmtUSD(loan + totInt);
+
+    const downPct = price>0 ? down/price*100 : 0;
+    $('mPmi').textContent = downPct < 20 ? 'Under 20% down — expect PMI' : 'None (20%+ down)';
+
+    const v = $('mortVerdict');
+    v.classList.remove('good','mid','bad');
+    v.classList.add(downPct >= 20 ? 'good' : 'mid');
+
+    // stacked bar
+    if (total > 0){
+      $('segPI').style.width  = (pi/total*100) + '%';
+      $('segTax').style.width = (taxMo/total*100) + '%';
+      $('segIns').style.width = (insMo/total*100) + '%';
+      $('segHoa').style.width = (hoa/total*100) + '%';
+    }
+  }
+
+  /* ---- Car loan ---- */
+  function calcCar(){
+    const price = num('cPrice'), down = num('cDown'), trade = num('cTrade');
+    const rate = num('cRate'), months = Math.max(num('cTerm'), 1), taxPct = num('cTax');
+
+    const salesTax = price * taxPct/100;
+    const financed = Math.max(price + salesTax - down - trade, 0);
+    const m = pmt(financed, rate, months);
+    const totalPaid = m * months;
+    const interest = Math.max(totalPaid - financed, 0);
+    const trueCost = totalPaid + down + trade; // everything out the door
+    const intPct = price > 0 ? interest/price*100 : 0;
+
+    $('carMonthly').textContent = fmtUSD(m);
+    $('carSub').textContent = 'for ' + months + ' months';
+    $('carStamp').textContent = months + ' PAYMENTS';
+    $('cLoan').textContent = fmtUSD(financed);
+    $('cInt').textContent = fmtUSD(interest);
+    $('cTotal').textContent = fmtUSD(totalPaid);
+    $('cTrueCost').textContent = fmtUSD(trueCost);
+    $('cIntPct').textContent = intPct.toFixed(0) + '%';
+
+    const v = $('carVerdict');
+    v.classList.remove('good','mid','bad');
+    if (intPct <= 8 && months <= 60) v.classList.add('good');
+    else if (intPct <= 18) v.classList.add('mid');
+    else v.classList.add('bad');
+  }
+
+  /* ---- Savings growth ---- */
+  function calcSave(){
+    const init = num('sInit'), monthly = num('sMonthly');
+    const rate = num('sRate')/100, years = Math.max(num('sYears'), 1);
+    const rm = Math.pow(1+rate, 1/12) - 1;
+    const months = Math.round(years*12);
+
+    let bal = init, half = 0;
+    for (let i=1; i<=months; i++){
+      bal = bal*(1+rm) + monthly;
+      if (i === Math.round(months/2)) half = bal;
+    }
+    const contributed = init + monthly*months;
+    const growth = Math.max(bal - contributed, 0);
+    const growthPct = contributed > 0 ? growth/contributed*100 : 0;
+
+    $('saveLabel').textContent = 'Balance in ' + years + ' years';
+    $('saveTotal').textContent = fmtUSD(bal);
+    $('saveSub').textContent = 'from ' + fmtUSD(contributed) + ' contributed';
+    $('saveStamp').textContent = 'GROWTH +' + growthPct.toFixed(0) + '%';
+    $('sContrib').textContent = fmtUSD(contributed);
+    $('sGrowth').textContent = fmtUSD(growth);
+    $('sHalf').textContent = fmtUSD(half);
+    $('sIncome').textContent = fmtUSD(bal*0.04/12) + '/mo';
+
+    const v = $('saveVerdict');
+    v.classList.remove('good','mid','bad');
+    v.classList.add('good');
+
+    if (bal > 0){
+      $('segPrin').style.width = (contributed/bal*100) + '%';
+      $('segGrow').style.width = (growth/bal*100) + '%';
+    }
+  }
+
+  /* ---- Debt payoff ---- */
+  function simulatePayoff(balance, apr, payment){
+    // returns {months, interest} or null if payment can't cover interest
+    const rm = apr/100/12;
+    if (payment <= balance*rm) return null;
+    let bal = balance, months = 0, interest = 0;
+    while (bal > 0 && months < 1200){
+      const int = bal*rm;
+      interest += int;
+      bal = bal + int - payment;
+      months++;
+    }
+    return { months, interest };
+  }
+
+  function calcDebt(){
+    const bal = num('dBal'), apr = num('dApr');
+    const pay = num('dPay'), extra = num('dExtra');
+
+    const base = simulatePayoff(bal, apr, pay);
+    const fast = simulatePayoff(bal, apr, pay + extra);
+    const v = $('debtVerdict'), s = $('debtStamp');
+    v.classList.remove('good','mid','bad');
+
+    if (!base && !fast){
+      $('debtLabel').textContent = 'Payment too low';
+      $('debtMonths').textContent = '∞';
+      $('debtSub').textContent = 'monthly interest alone is ' + fmtUSD(bal*apr/100/12) + ' — the balance never shrinks';
+      s.textContent = 'RAISE PAYMENT'; v.classList.add('bad');
+      $('dBase').textContent = 'never'; $('dFast').textContent = 'never';
+      $('dIntBase').textContent = '—'; $('dIntFast').textContent = '—'; $('dSaved').textContent = '—';
+      return;
+    }
+
+    const active = fast || base;
+    const yrs = active.months/12;
+    const freeYear = new Date().getFullYear() + Math.floor((new Date().getMonth() + active.months)/12);
+
+    $('debtLabel').textContent = 'Debt-free in';
+    $('debtMonths').textContent = active.months + ' mo';
+    $('debtSub').textContent = extra > 0 && fast ? 'with the extra ' + fmtUSD(extra) + '/mo' : 'at your current payment';
+    s.textContent = 'FREE IN ' + freeYear;
+    v.classList.add(yrs <= 1.5 ? 'good' : (yrs <= 4 ? 'mid' : 'bad'));
+
+    $('dBase').textContent = base ? base.months + ' mo' : 'never (payment too low)';
+    $('dFast').textContent = fast ? fast.months + ' mo' : '—';
+    $('dIntBase').textContent = base ? fmtUSD(base.interest) : '—';
+    $('dIntFast').textContent = fast ? fmtUSD(fast.interest) : '—';
+    $('dSaved').textContent = (base && fast) ? fmtUSD(Math.max(base.interest - fast.interest,0)) : '—';
+  }
+
+  /* ---- Wire up ---- */
+  const wire = (ids, fn) => ids.forEach(id => $(id).addEventListener('input', fn));
+  wire(['cashPrice','pointCost','taxes','baseline'], calcCPP);
+  wire(['ageNow','ageRetire','assets','contrib','ret','spend','swr'], calcFIRE);
+  wire(['mPrice','mDown','mTerm','mRate','mTax','mIns','mHoa'], calcMort);
+  wire(['cPrice','cDown','cTrade','cRate','cTerm','cTax'], calcCar);
+  wire(['sInit','sMonthly','sRate','sYears'], calcSave);
+  wire(['dBal','dApr','dPay','dExtra'], calcDebt);
+
+  calcCPP(); calcFIRE(); calcMort(); calcCar(); calcSave(); calcDebt();
+})();
+</script>
+</body>
+</html>
